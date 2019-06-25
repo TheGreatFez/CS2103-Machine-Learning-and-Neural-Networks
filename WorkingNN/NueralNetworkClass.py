@@ -15,98 +15,74 @@ def printArray(x):
             print(x[i][a])
 
 
-class NueralNetwork:
-    def __init__(self,training_data,network_setup):
-        self.train_data = training_data
+class NeuralNetwork:
+    def __init__(self,network_setup):
+        
+        self.weight_max = 1
+        self.weight_min = -1
         '''
-        Train_data is a list of dictionaries. Each Dictionary has two keys:
-            keys = 'data' and 'target'
-            The data values are an array of inputs(same for all dicts), 
-            and the target values are a single number (0 or 1) 
+        sets the limits of the weights
+        '''
+        
+        self.generation = 0
+        '''
+        generation is the number of iterations of training the neural network
+        has undergone
         '''
         self.net_setup = network_setup
         '''
         net_setup is a list of values. Each value is how many perceptrons are 
-            on each level
-            net_setup.length = number of inner network levels, excluding 
-            data input level and the output level
-            ie net_setup = [2,3,2]: 3 inner levels; 2 perceptrons on level 1 etc
+            on each levels
+            a preceptron is a node that takes in inputs from the previous level
+            net_setup.length = number of inner network levels, including the input and output level
+            ie net_setup = [2,3,2]: 2 inputs, 3 preceptrons, 2 outputs, total of 3 levels
+            
+        net_setup must have a length of at least 2
         '''
         self.network = []
-        #^^^holds a 2D array with perceptrons organized like net_setup dictates
-        
-        for i in range(len(self.net_setup)):
-            level = []
-            for num in range(self.net_setup[i]):
-                if (i == 0):
-                    p = Perceptron(len(self.train_data[0]['data']))
-                else:
-                    p = Perceptron(self.net_setup[i-1])
-                level.append(p)
+        #^^^holds a 2D array with perceptrons organized like net_setup dictates        
+        for size in self.net_setup:
+            level = np.zeros((size,1))
             self.network.append(level)
-        #printArray(self.network)
-    
-
-
-    def inputData(self,x):
-        '''
-            if x has a target then train
-            else give me prediction
-            
-        '''
-
-    def fwdProp(self,p):
-        enterData = []
-        enterData.append(p['data'])
-        for i in range(len(self.network)):
-            tempData = []
-            for a in range(len(self.network[i])):
-                tempData.append(self.network[i][a].getPred(enterData[i]))
-            enterData.append(tempData)
-            
-        outputLayer = Perceptron(self.net_setup[-1])
-        return outputLayer.getPred(enterData[-1])
-    
-
-    def cost(self,p):
-        pred = self.fwdProp(p)
-        return np.square(p['target'] - pred)
         
-    def bwProp(self,p):
-        '''
-            get all the weights of all nodes in the network
-            ie all_weights= [
-                            [weights for N00: [w1,w2,w3],      weights for N01, ]==> lvl 0 
-                            
-                            
-                            
-                            
-                            
-                            [weights for N10, weights for N11,[  ] ]==> lvl 1
-                            ]
-            loop through each node, can do b/c self.network
-            oldWeights = node.getWeights()
-            i will go from 0 to len(oldWeights)    
-                wTemp_1 = oldweights
-                wTemp_1[i] += H
-                wTemp_2 = oldweights
-                wTemp_2[i] -= H
-                node.changeWeight(wTemp_1)
-                m1 = cost(p)==> for whole network
-                node.changeWeight(wTemp_2)
-                derivative =( m1 - cost(p) )/(2*H)
-                d_cost.append(derivative)
-            
-            
-        '''
-
+        self.weights = []
+        count = 0
+        for net_index in range(len(self.net_setup[1:])):
+            diff = self.weight_max - self.weight_min
+            temp_weight_array = diff*np.random.rand(self.net_setup[net_index + 1],self.net_setup[net_index]) + self.weight_min
+            self.weights.append(temp_weight_array)
+            print('Weights of Layer ' + str(count))
+            print(temp_weight_array)
+            count += 1
+    
+    def sigmoid(self, x):
+        return 1/(1+np.exp(-x))
+    
+    def getOutput(self,input_data):
+        output = 0
+        count = 0
+        prev_level = input_data
+        self.network[0] = prev_level
+        for weights_array in self.weights:
+            next_level = np.dot(weights_array,prev_level)
+            for i in range(len(next_level)):
+                next_level[i] = self.sigmoid(next_level[i])
+            print('Count ' + str(count))
+            print(next_level)
+            prev_level = next_level
+            self.network[count + 1] = prev_level
+            count += 1
+#        temp_array = []
         
-
+        return output
+    
 data = [{'data': [3,1.5], 'target': 1}, {'data':[2,1], 'target': 0},
         {'data': [4,1.5], 'target': 1}, {'data': [3,1], 'target': 0},
         {'data': [3.5,.5], 'target': 1}, {'data': [2,.5], 'target': 0},
         {'data': [5.5,1], 'target': 1}, {'data': [1,1], 'target': 0}]
-n = NueralNetwork(data, [2,3,2])
-print(n.fwdProp(data[0]))
-          
-            
+n = NeuralNetwork([2,3,3,1])
+
+print(n.getOutput(data[0]['data']))
+
+print('Network Output')
+print(n.network)
